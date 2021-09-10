@@ -1,0 +1,143 @@
+version: "3.8"
+
+networks:
+  majestic-next-engine.network:
+    driver: bridge
+
+services:
+  php:
+    build: ./Docker/Addons/PHP
+    restart: always
+    tty: true
+    container_name: majestic-next-engine.php
+    depends_on:
+     - mysql
+    # - postgres
+    # - redis
+    # - mariadb
+    networks:
+      - majestic-next-engine.network
+    ports:
+      - "9000:9000"
+    volumes:
+      - .:/var/www/app.dev
+
+  nginx:
+    build: ./Docker/Addons/Nginx
+    container_name: majestic-next-engine.nginx
+    restart: always
+    tty: true
+    depends_on:
+      - php
+      - mysql
+      # - postgres
+      # - redis
+      # - mariadb
+    ports:
+      - "80:80"
+      - "433:433"
+    volumes:
+      - .:/var/www/app.dev
+    networks:
+      - majestic-next-engine.network
+
+  # apache:
+  #   build: ./Docker/Addons/Apache
+  #   restart: always
+  #   container_name: majestic-next-engine.apache
+  #   networks:
+  #     - majestic-next-engine.network
+  #   depends_on:
+  #     - php
+  #     # - mysql
+  #     # - postgres
+  #     # - redis
+  #     # - mariadb
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - .:/var/www/app.dev
+
+  #  mariadb:
+  #    image: mariadb
+  #    tty: true
+  #    restart: always
+  #    container_name: majestic-next-engine.mariadb
+  #    networks:
+  #      - majestic-next-engine.network
+  #    ports:
+  #      - '3306:3306'
+  #    volumes:
+  #      - './Docker/Addons/MySQL/mariadb.cnf:/etc/mysql/conf.d/custom.cnf:ro'
+  #      - './Docker/DataBase:/var/lib/mysql'
+  #    environment:
+  #      - MYSQL_PASSWORD=${db_password}
+  #      - MYSQL_ROOT_PASSWORD=${db_password}
+  #      - MYSQL_DATABASE=${db_driver}
+
+  mysql:
+    build: ./Docker/Addons/MySQL
+    tty: true
+    restart: always
+    container_name: majestic-next-engine.mysql
+    networks:
+      - majestic-next-engine.network
+    ports:
+      - "3306:3306"
+    volumes:
+      - "./Docker/Addons/MySQL/mysql.cnf:/etc/mysql/conf.d/custom.cnf:ro"
+      - "./Docker/DataBase:/var/lib/mysql"
+    environment:
+      - MYSQL_PASSWORD=${db_password}
+      - MYSQL_ROOT_PASSWORD=${db_password}
+      - MYSQL_DATABASE=${db_driver}
+
+  phpmyadmin:
+    image: library/phpmyadmin
+    container_name: majestic-next-engine.phpmyadmin
+    tty: true
+    networks:
+      - majestic-next-engine.network
+    depends_on:
+      - mysql
+      - mariadb
+    environment:
+      PMA_USER: ${db_username}
+      PMA_PASSWORD: ${db_password}
+      PMA_HOSTS: mysql
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+    ports:
+      - '8080:80'
+
+  # postgres:
+  #   build: ./Docker/Addons/Postgres
+  #   container_name: majestic-next-engine.postgres
+  #   tty: true
+  #   restart: always
+  #   networks:
+  #     - majestic-next-engine.network
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - "./docker/postgres/dbdata:/var/lib/postgresql/data"
+  #   environment:
+  #     - POSTGRES_USER=root
+  #     - POSTGRES_PASSWORD=root
+  #     - POSTGRES_DB=development
+
+  # redis:
+  #   image: bitnami/redis:latest
+  #   restart: always
+  #   tty: true
+  #   container_name: majestic-next-engine.redis
+  #   volumes:
+  #     - ./docker/redis:/bitnami/redis/data
+  #   networks:
+  #     - majestic-next-engine.network
+  #   environment:
+  #     - ALLOW_EMPTY_PASSWORD=no
+  #     - REDIS_PASSWORD=root
+  #   ports:
+  #     - "6379:6379"
